@@ -33,6 +33,7 @@ parser.add_argument('--dropout', type=float, default=0.5,
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
+# 产生随机种子,以便结果是确定的
 np.random.seed(args.seed)
 torch.manual_seed(args.seed)
 if args.cuda:
@@ -46,6 +47,8 @@ model = GCN(nfeat=features.shape[1],
             nhid=args.hidden,
             nclass=labels.max().item() + 1,
             dropout=args.dropout)
+
+# 优化器
 optimizer = optim.Adam(model.parameters(),
                        lr=args.lr, weight_decay=args.weight_decay)
 
@@ -86,9 +89,13 @@ def train(epoch):
 
 
 def test():
+    """对训练得到的模型在测试集上运行得到对应的loss和accuracy"""
     model.eval()
+    # 前向传播
     output = model(features, adj)
+    # 最大似然损失函数
     loss_test = F.nll_loss(output[idx_test], labels[idx_test])
+    # 计算准确率
     acc_test = accuracy(output[idx_test], labels[idx_test])
     print("Test set results:",
           "loss= {:.4f}".format(loss_test.item()),
@@ -97,6 +104,7 @@ def test():
 
 # Train model
 t_total = time.time()
+# 逐个epoch进行训练,最后执行test()
 for epoch in range(args.epochs):
     train(epoch)
 print("Optimization Finished!")
